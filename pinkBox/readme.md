@@ -1,0 +1,1 @@
+The vertex array vao is not needed ?!?
