@@ -1,7 +1,9 @@
 "use strict";
 
 var vs = `#version 300 es
+
 in vec2 a_position;
+in vec4 a_color;
 
 uniform mat3 u_matrix;
 
@@ -11,12 +13,8 @@ void main() {
   // Multiply the position by the matrix.
   gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy, 0, 1);
 
-  // Convert from clipspace to colorspace.
-  // Clipspace goes -1.0 to +1.0
-  // Colorspace goes from 0.0 to 1.0
-  v_color = gl_Position * 0.5 + 0.5;
-  v_color.a = 1.0;
-  v_color.b = 0.0;
+  // Copy the color from the attribute to the varying.
+  v_color = a_color;
 }
 `;
 
@@ -47,6 +45,7 @@ function main() {
 
   // look up where the vertex data needs to go.
   var positionLocation = gl.getAttribLocation(program, "a_position");
+  var colorLocation = gl.getAttribLocation(program, "a_color");
 
   // lookup uniforms
   var matrixLocation = gl.getUniformLocation(program, "u_matrix");
@@ -55,7 +54,7 @@ function main() {
   var vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
 
-  // Create a buffer.
+  // Create a buffer for the positons.
   var buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
@@ -70,6 +69,21 @@ function main() {
   var stride = 0;
   var offset = 0;
   gl.vertexAttribPointer(positionLocation, size, type, normalize, stride, offset);
+
+  // Create a buffer for the colors.
+  var buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  // Set the colors.
+  setColors(gl);
+
+  // tell the color attribute how to pull data out of the current ARRAY_BUFFER
+  gl.enableVertexAttribArray(colorLocation);
+  var size = 4;
+  var type = gl.FLOAT;
+  var normalize = false;
+  var stride = 0;
+  var offset = 0;
+  gl.vertexAttribPointer(colorLocation, size, type, normalize, stride, offset);
 
   var translation = [200, 150];
   var angleInRadians = 0;
@@ -114,37 +128,65 @@ function main() {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Compute the matrix
-    var matrix = m3.projection(gl.canvas.clientWidth, gl.canvas.clientHeight);
-    matrix = m3.translate(matrix, translation[0], translation[1]);
-    matrix = m3.rotate(matrix, angleInRadians);
-    matrix = m3.scale(matrix, scale[0], scale[1]);
-
     // Tell it to use our program (pair of shaders)
     gl.useProgram(program);
 
     // Bind the attribute/buffer set we want.
     gl.bindVertexArray(vao);
 
+    // Compute the matrices
+    var matrix = m3.projection(gl.canvas.clientWidth, gl.canvas.clientHeight);
+    matrix = m3.translate(matrix, translation[0], translation[1]);
+    matrix = m3.rotate(matrix, angleInRadians);
+    matrix = m3.scale(matrix, scale[0], scale[1]);
+
     // Set the matrix.
     gl.uniformMatrix3fv(matrixLocation, false, matrix);
 
     // Draw the geometry.
     var offset = 0;
-    var count = 3;
+    var count = 6;
+
     gl.drawArrays(gl.TRIANGLES, offset, count);
   }
 }
 
-// Fill the buffer with the values that define a triangle.
+
+// Fill the buffer with the values that define a rectangle.
 function setGeometry(gl) {
   gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([
-             0, -100,
-           150,  125,
-          -175,  100,
+          -150, -100,
+           150, -100,
+          -150,  100,
+           150, -100,
+          -150,  100,
+           150,  100,
       ]),
+      gl.STATIC_DRAW);
+}
+
+// Fill the buffer with colors for the 2 triangles
+// that make the rectangle.
+function setColors(gl) {
+  // Pick 2 random colors.
+  var r1 = Math.random();
+  var b1 = Math.random();
+  var g1 = Math.random();
+  var r2 = Math.random();
+  var b2 = Math.random();
+  var g2 = Math.random();
+
+  gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(
+        [ Math.random(), Math.random(), Math.random(), 1,
+          Math.random(), Math.random(), Math.random(), 1,
+          Math.random(), Math.random(), Math.random(), 1,
+          Math.random(), Math.random(), Math.random(), 1,
+          Math.random(), Math.random(), Math.random(), 1,
+          Math.random(), Math.random(), Math.random(), 1]),
       gl.STATIC_DRAW);
 }
 
