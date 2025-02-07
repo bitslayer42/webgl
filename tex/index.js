@@ -42,8 +42,8 @@ in float v_flipper;
 out vec4 outColor;
 
 void main() {
-  vec2 onePixel = vec2(1) / vec2(textureSize(u_image, 0));
-  vec2 twoPixel = vec2(3) / vec2(textureSize(u_image, 0));
+  float r = length(v_texCoord);
+  vec2 onePixel = vec2(7) / vec2(textureSize(u_image, 0));
 
   vec4 color1 = texture(u_image, v_texCoord);
  
@@ -52,19 +52,20 @@ void main() {
       texture(u_image, v_texCoord) +
       texture(u_image, v_texCoord + vec2( onePixel.x, 0.0)) +
       texture(u_image, v_texCoord + vec2(-onePixel.x, 0.0))) / 3.0;
-
-  vec4 color3 = (
-      texture(u_image, v_texCoord) +
-      texture(u_image, v_texCoord + vec2( twoPixel.x, 0.0)) +
-      texture(u_image, v_texCoord + vec2(-twoPixel.x, 0.0))) / 3.0;
-
-  outColor = mix(color1, color3, v_flipper);     
+  if(r < 1.0)
+  {
+    outColor = mix(color1, color2, v_flipper);     
+  } else
+  {
+    // If we are outside the unit circle, skip
+    outColor = vec4(0.0);
+  }
 }
 `;
 
 var image = new Image();
-  image.src = "./valentine.jpg";  // MUST BE SAME DOMAIN!!!
-  image.onload = function() {
+image.src = "./valentine.jpg";  // MUST BE SAME DOMAIN!!!
+image.onload = function () {
   render(image);
 };
 
@@ -79,7 +80,7 @@ function render(image) {
 
   // setup GLSL program
   var program = webglUtils.createProgramFromSources(gl,
-      [vertexShaderSource, fragmentShaderSource]);
+    [vertexShaderSource, fragmentShaderSource]);
 
   // look up where the vertex data needs to go.
   var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
@@ -112,18 +113,18 @@ function render(image) {
   var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
   var offset = 0;        // start at the beginning of the buffer
   gl.vertexAttribPointer(
-      positionAttributeLocation, size, type, normalize, stride, offset);
+    positionAttributeLocation, size, type, normalize, stride, offset);
 
   // provide texture coordinates for the rectangle.
   var texCoordBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      0.0,  0.0,
-      1.0,  0.0,
-      0.0,  1.0,
-      0.0,  1.0,
-      1.0,  0.0,
-      1.0,  1.0,
+    0.0, 0.0,
+    1.0, 0.0,
+    0.0, 1.0,
+    0.0, 1.0,
+    1.0, 0.0,
+    1.0, 1.0,
   ]), gl.STATIC_DRAW);
 
   // Turn on the attribute
@@ -136,7 +137,7 @@ function render(image) {
   var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
   var offset = 0;        // start at the beginning of the buffer
   gl.vertexAttribPointer(
-      texCoordAttributeLocation, size, type, normalize, stride, offset);
+    texCoordAttributeLocation, size, type, normalize, stride, offset);
 
   // Create a texture.
   var texture = gl.createTexture();
@@ -161,11 +162,11 @@ function render(image) {
   var srcFormat = gl.RGBA;        // format of data we are supplying
   var srcType = gl.UNSIGNED_BYTE; // type of data we are supplying
   gl.texImage2D(gl.TEXTURE_2D,
-                mipLevel,
-                internalFormat,
-                srcFormat,
-                srcType,
-                image);
+    mipLevel,
+    internalFormat,
+    srcFormat,
+    srcType,
+    image);
 
   webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
@@ -198,22 +199,25 @@ function render(image) {
   // Set a rectangle the same size as the image.
   setRectangle(gl, 0, 0, image.width, image.height);
 
-  let flipper = false;
-  const intervalId = setInterval(go, 1000);
+  let flipper = true;
+  var primitiveType = gl.TRIANGLES;
+  var offset = 0;
+  var count = 6;
+
+  go();
 
   function go() {
-    if(flipper == true) {
+    if (flipper == true) {
       flipper = false;
     } else {
       flipper = true;
     }
-    console.log(flipper);
     gl.uniform1f(gl.getUniformLocation(program, "u_flipper"), flipper + 0.0);
-    // Draw the rectangle.
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 6;
+
     gl.drawArrays(primitiveType, offset, count);
+    setTimeout(() => {
+      go();
+    }, 1000);
   }
 }
 
@@ -223,12 +227,12 @@ function setRectangle(gl, x, y, width, height) {
   var y1 = y;
   var y2 = y + height;
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-     x1, y1,
-     x2, y1,
-     x1, y2,
-     x1, y2,
-     x2, y1,
-     x2, y2,
+    x1, y1,
+    x2, y1,
+    x1, y2,
+    x1, y2,
+    x2, y1,
+    x2, y2,
   ]), gl.STATIC_DRAW);
 }
 
