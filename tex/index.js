@@ -4,11 +4,18 @@ var vertexShaderSource = `#version 300 es
 in vec2 a_position;
 in vec2 a_texCoord;
 
+uniform float u_flipper;
+
 uniform vec2 u_resolution;
 
 out vec2 v_texCoord;
 
+out float v_flipper;
+
 void main() {
+
+  v_flipper = u_flipper;
+
   // convert the position from pixels to clipspace
   vec2 clipSpace = ((a_position / u_resolution) * 2.0) - 1.0;
 
@@ -29,12 +36,29 @@ uniform sampler2D u_image;
 // the texCoords passed in from the vertex shader.
 in vec2 v_texCoord;
 
+in float v_flipper;
+
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
 void main() {
+  vec2 onePixel = vec2(1) / vec2(textureSize(u_image, 0));
+  vec2 twoPixel = vec2(3) / vec2(textureSize(u_image, 0));
 
-  outColor = texture(u_image, v_texCoord);
+  vec4 color1 = texture(u_image, v_texCoord);
+ 
+  // average the left, middle, and right pixels.
+  vec4 color2 = (
+      texture(u_image, v_texCoord) +
+      texture(u_image, v_texCoord + vec2( onePixel.x, 0.0)) +
+      texture(u_image, v_texCoord + vec2(-onePixel.x, 0.0))) / 3.0;
+
+  vec4 color3 = (
+      texture(u_image, v_texCoord) +
+      texture(u_image, v_texCoord + vec2( twoPixel.x, 0.0)) +
+      texture(u_image, v_texCoord + vec2(-twoPixel.x, 0.0))) / 3.0;
+
+  outColor = mix(color1, color3, v_flipper);     
 }
 `;
 
@@ -162,6 +186,8 @@ function render(image) {
   // pixels to clipspace in the shader
   gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
 
+
+
   // Tell the shader to get the texture from texture unit 0
   gl.uniform1i(imageLocation, 0);
 
@@ -172,11 +198,23 @@ function render(image) {
   // Set a rectangle the same size as the image.
   setRectangle(gl, 0, 0, image.width, image.height);
 
-  // Draw the rectangle.
-  var primitiveType = gl.TRIANGLES;
-  var offset = 0;
-  var count = 6;
-  gl.drawArrays(primitiveType, offset, count);
+  let flipper = false;
+  const intervalId = setInterval(go, 1000);
+
+  function go() {
+    if(flipper == true) {
+      flipper = false;
+    } else {
+      flipper = true;
+    }
+    console.log(flipper);
+    gl.uniform1f(gl.getUniformLocation(program, "u_flipper"), flipper + 0.0);
+    // Draw the rectangle.
+    var primitiveType = gl.TRIANGLES;
+    var offset = 0;
+    var count = 6;
+    gl.drawArrays(primitiveType, offset, count);
+  }
 }
 
 function setRectangle(gl, x, y, width, height) {
