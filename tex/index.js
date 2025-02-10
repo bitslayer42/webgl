@@ -4,8 +4,6 @@ var vertexShaderSource = `#version 300 es
 in vec2 a_position;
 in vec2 a_texCoord;
 
-uniform float u_flipper;
-
 uniform vec2 u_resolution;
 
 out vec2 v_texCoord;
@@ -33,35 +31,23 @@ uniform sampler2D u_image;
 // the texCoords passed in from the vertex shader.
 in vec2 v_texCoord;
 
-uniform float u_flipper;
-
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
 void main() {
   float r = length(v_texCoord);
-  vec2 onePixel = vec2(10) / vec2(textureSize(u_image, 0));
   vec2 recenter = v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5);
-  vec4 color1 = texture(u_image, recenter);
-  // average the left, middle, and right pixels.
-  vec4 color2 = (
-      texture(u_image, recenter) +
-      texture(u_image, recenter + vec2( onePixel.x, 0.0)) +
-      texture(u_image, recenter + vec2(-onePixel.x, 0.0))) / 3.0;
-  color2.b = 0.3;
-  if(u_flipper == 0.0) {
-    outColor = color1;
-  } else {
-    if(r < 1.0)
-    {
-      outColor = color2;     
-    } else
-    {
-      // If we are outside the unit circle, skip
-      outColor = vec4(0.0);
-    }
+  if(r < 1.0)
+  {
+    outColor = texture(u_image, recenter);     
+  } else
+  {
+    // If we are outside the unit circle, skip
+    outColor = vec4(0.0);
   }
 }
+
+
 `;
 
 var image = new Image();
@@ -207,26 +193,10 @@ function render(image) {
   // Set a rectangle the same size as the image.
   setRectangle(gl, 0, 0, image.width, image.height);
 
-  let flipper = true;
   var primitiveType = gl.TRIANGLES;
   var offset = 0;
   var count = 6;
-
-  go();
-
-  function go() {
-    if (flipper == true) {
-      flipper = false;
-    } else {
-      flipper = true;
-    }
-    gl.uniform1f(gl.getUniformLocation(program, "u_flipper"), flipper + 0.0);
-
-    gl.drawArrays(primitiveType, offset, count);
-    setTimeout(() => {
-      go();
-    }, 3000);
-  }
+  gl.drawArrays(primitiveType, offset, count);
 }
 
 function setRectangle(gl, x, y, width, height) {
