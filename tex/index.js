@@ -40,15 +40,14 @@ out vec4 outColor;
 
 void main() {
   float r = length(v_texCoord);
-  vec2 onePixel = vec2(300) / vec2(textureSize(u_image, 0));
-
-  vec4 color1 = texture(u_image, v_texCoord);
-
+  vec2 onePixel = vec2(10) / vec2(textureSize(u_image, 0));
+  vec2 recenter = v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5);
+  vec4 color1 = texture(u_image, recenter);
   // average the left, middle, and right pixels.
   vec4 color2 = (
-      texture(u_image, v_texCoord) +
-      texture(u_image, v_texCoord + vec2( onePixel.x, 0.0)) +
-      texture(u_image, v_texCoord + vec2(-onePixel.x, 0.0))) / 3.0;
+      texture(u_image, recenter) +
+      texture(u_image, recenter + vec2( onePixel.x, 0.0)) +
+      texture(u_image, recenter + vec2(-onePixel.x, 0.0))) / 3.0;
   color2.b = 0.3;
   if(u_flipper == 0.0) {
     outColor = color1;
@@ -121,11 +120,18 @@ function render(image) {
   var texCoordBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-    0.0, 0.0,
-    1.0, 0.0,
-    0.0, 1.0,
-    0.0, 1.0,
-    1.0, 0.0,
+    // 0.0, 0.0,
+    // 1.0, 0.0,
+    // 0.0, 1.0,
+    // 0.0, 1.0,
+    // 1.0, 0.0,
+    // 1.0, 1.0,
+
+    -1.0, -1.0,
+    1.0, -1.0,
+    -1.0, 1.0,
+    -1.0, 1.0,
+    1.0, -1.0,
     1.0, 1.0,
   ]), gl.STATIC_DRAW);
 
