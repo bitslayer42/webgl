@@ -10,15 +10,12 @@ uniform vec2 u_resolution;
 
 out vec2 v_texCoord;
 
-out float v_flipper;
-
 void main() {
-
-  v_flipper = u_flipper;
 
   // convert the position from pixels to clipspace
   vec2 clipSpace = ((a_position / u_resolution) * 2.0) - 1.0;
 
+  // flip y
   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
 
   // pass the texCoord to the fragment shader
@@ -36,29 +33,34 @@ uniform sampler2D u_image;
 // the texCoords passed in from the vertex shader.
 in vec2 v_texCoord;
 
-in float v_flipper;
+uniform float u_flipper;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
 void main() {
   float r = length(v_texCoord);
-  vec2 onePixel = vec2(7) / vec2(textureSize(u_image, 0));
+  vec2 onePixel = vec2(300) / vec2(textureSize(u_image, 0));
 
   vec4 color1 = texture(u_image, v_texCoord);
- 
+
   // average the left, middle, and right pixels.
   vec4 color2 = (
       texture(u_image, v_texCoord) +
       texture(u_image, v_texCoord + vec2( onePixel.x, 0.0)) +
       texture(u_image, v_texCoord + vec2(-onePixel.x, 0.0))) / 3.0;
-  if(r < 1.0)
-  {
-    outColor = mix(color1, color2, v_flipper);     
-  } else
-  {
-    // If we are outside the unit circle, skip
-    outColor = vec4(0.0);
+  color2.b = 0.3;
+  if(u_flipper == 0.0) {
+    outColor = color1;
+  } else {
+    if(r < 1.0)
+    {
+      outColor = color2;     
+    } else
+    {
+      // If we are outside the unit circle, skip
+      outColor = vec4(0.0);
+    }
   }
 }
 `;
@@ -217,7 +219,7 @@ function render(image) {
     gl.drawArrays(primitiveType, offset, count);
     setTimeout(() => {
       go();
-    }, 1000);
+    }, 3000);
   }
 }
 
