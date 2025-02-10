@@ -1,6 +1,6 @@
 "use strict";
-
-var vertexShaderSource = `#version 300 es
+/*VECTOR*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*/
+var vertexShaderSource = /*glsl*/`#version 300 es
 in vec2 a_position;
 in vec2 a_texCoord;
 
@@ -21,8 +21,8 @@ void main() {
   v_texCoord = a_texCoord;
 }
 `;
-
-var fragmentShaderSource = `#version 300 es
+/*FRAGMENT*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*/
+var fragmentShaderSource = /*glsl*/`#version 300 es
 precision highp float;
 
 // our texture
@@ -34,22 +34,22 @@ in vec2 v_texCoord;
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
+
+// SDF functions
+float sdCircle( vec2 p, float r ) {
+    return length(p) - r;
+}
+
 void main() {
-  float r = length(v_texCoord);
-  vec2 recenter = v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5);
-  if(r < 1.0)
-  {
-    outColor = texture(u_image, recenter);     
-  } else
-  {
+  if (sdCircle(v_texCoord, 1.0) < 0.0) {
+      outColor = texture(u_image, v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5));     
+  } else {
     // If we are outside the unit circle, skip
     outColor = vec4(0.0);
   }
 }
-
-
 `;
-
+/*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*/
 var image = new Image();
 image.src = "./valentine.jpg";  // MUST BE SAME DOMAIN!!!
 image.onload = function () {
