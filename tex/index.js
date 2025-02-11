@@ -25,6 +25,8 @@ void main() {
 var fragmentShaderSource = /*glsl*/`#version 300 es
 precision highp float;
 
+uniform vec2 u_resolution;
+
 // our texture
 uniform sampler2D u_image;
 
@@ -35,18 +37,37 @@ in vec2 v_texCoord;
 out vec4 outColor;
 
 
-// SDF functions
-float sdCircle( vec2 p, float r ) {
-    return length(p) - r;
-}
-
 void main() {
-  if (sdCircle(v_texCoord, 1.0) < 0.0) {
-      outColor = texture(u_image, v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5));     
-  } else {
-    // If we are outside the unit circle, skip
-    outColor = vec4(0.0);
-  }
+    // Normalized pixel coordinates (from 0 to 1)
+    vec2 uv = v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5);
+    
+    // Center the coordinate system
+    uv = uv * 2.0 - 1.0;
+    
+    // Calculate the radial distance from the center
+    float r = length(uv);
+    
+    // If the radial distance is less than 1.0, we are inside the unit circle
+    if(r < 1.0)
+    // if(true)
+    {
+        // Calculate the angle of the current pixel from the center
+        float theta = atan(uv.y, uv.x);
+        
+        // Apply the fisheye effect by modifying the radial distance
+        float fisheyeR = 2.0 * asin(r) / 3.14;
+        
+        // Convert the polar coordinates back to Cartesian coordinates
+        vec2 fisheyeUV = vec2(cos(theta) * fisheyeR, sin(theta) * fisheyeR) * 0.5 + 0.5;
+        
+        // Sample the original image at the calculated coordinates and set the output color
+        outColor = texture(u_image, fisheyeUV);
+    }
+    else
+    {
+        // If we are outside the unit circle, set the output color to black
+        outColor = vec4(0.0);
+    }
 }
 `;
 /*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*//*glsl*/
