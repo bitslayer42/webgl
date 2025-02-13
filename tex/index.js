@@ -30,42 +30,47 @@ uniform vec2 u_resolution;
 // our texture
 uniform sampler2D u_image;
 
+uniform float time;
+
 // the texCoords passed in from the vertex shader.
 in vec2 v_texCoord;
 
 // we need to declare an output for the fragment shader
 out vec4 outColor;
 
-
 void main() {
-    // Normalized pixel coordinates (from 0 to 1)
-    vec2 uv = v_texCoord / vec2(2.0, 2.0) + vec2(0.5, 0.5);
-    
-    // Center the coordinate system
-    uv = uv * 2.0 - 1.0;
-    
+
+    float pi = 3.14;
+
     // Calculate the radial distance from the center
-    float r = length(uv);
-    
+    float r = length(v_texCoord);
+
     // If the radial distance is less than 1.0, we are inside the unit circle
     if(r < 1.0)
-    // if(true)
     {
         // Calculate the angle of the current pixel from the center
-        float theta = atan(uv.y, uv.x);
-        
-        // Apply the fisheye effect by modifying the radial distance
-        float fisheyeR = 2.0 * asin(r) / 3.14;
+        float theta = atan(v_texCoord.x, v_texCoord.y);
+
+        float s = 0.0001;
+        // s oscillating between 0 and 10
+        if(sin(time) <= -1.0){
+          s = 0.0001;
+        }else{
+          s = (sin(time) + 1.0) * 10.0;
+        }
+
+        // Modify the radial distance
+        float fisheyeR = (exp(r * log(1.0 + s * pi) / 1.0) - 1.0) / s / pi;
         
         // Convert the polar coordinates back to Cartesian coordinates
-        vec2 fisheyeUV = vec2(cos(theta) * fisheyeR, sin(theta) * fisheyeR) * 0.5 + 0.5;
+        vec2 fisheyeUV = vec2(sin(theta) * fisheyeR, cos(theta) * fisheyeR) * 0.5 + 0.5;
         
         // Sample the original image at the calculated coordinates and set the output color
         outColor = texture(u_image, fisheyeUV);
     }
     else
     {
-        // If we are outside the unit circle, set the output color to black
+        // If we are outside the unit circle, set the output color to clear
         outColor = vec4(0.0);
     }
 }
@@ -97,6 +102,7 @@ function render(image) {
   // lookup uniforms
   var resolutionLocation = gl.getUniformLocation(program, "u_resolution");
   var imageLocation = gl.getUniformLocation(program, "u_image");
+  const timeLocation = gl.getUniformLocation(program, "time");
 
   // Create a vertex array object (attribute state)
   var vao = gl.createVertexArray();
@@ -202,8 +208,6 @@ function render(image) {
   // pixels to clipspace in the shader
   gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
 
-
-
   // Tell the shader to get the texture from texture unit 0
   gl.uniform1i(imageLocation, 0);
 
@@ -217,7 +221,21 @@ function render(image) {
   var primitiveType = gl.TRIANGLES;
   var offset = 0;
   var count = 6;
-  gl.drawArrays(primitiveType, offset, count);
+  //var time = 0;
+
+  function render(time_ms) {
+    let time = time_ms * 0.001;  // convert to seconds
+    gl.useProgram(program);
+    gl.uniform1f(timeLocation, time);  // time in seconds
+    gl.drawArrays(primitiveType, offset, count);
+    // draw
+  
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+
+  
 }
 
 function setRectangle(gl, x, y, width, height) {
