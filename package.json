@@ -7,12 +7,12 @@
     "doc": "docs"
   },
   "scripts": {
-    "start": "reload -b"
+    "start": "reload -b -p 8081"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "reload": "^2.2.0"
+    "reload": "^3.3.0"
   }
 }
